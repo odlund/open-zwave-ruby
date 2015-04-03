@@ -1,3 +1,6 @@
+*.o
+*.bundle
+*.so
 *.gem
 *.rbc
 /.config
