@@ -91,80 +91,35 @@ static VALUE options_are_locked(VALUE self) {
 void OnNotification( Notification const* _notification, void* _context ) {
     VALUE self = (VALUE)_context;
     
-	switch( _notification->GetType() )
-	{
-		case Notification::Type_ValueAdded:
-		{
-            break;
-		}
-
-		case Notification::Type_ValueRemoved:
-		{
-			break;
-		}
-
-		case Notification::Type_ValueChanged:
-		{
-			break;
-		}
-
-		case Notification::Type_Group:
-		{
-			break;
-		}
-
-		case Notification::Type_NodeAdded:
-		{
-			break;
-		}
-
-		case Notification::Type_NodeRemoved:
-		{
-			break;
-		}
-
-		case Notification::Type_NodeEvent:
-		{
-			break;
-		}
-
-		case Notification::Type_PollingDisabled:
-		{
-			break;
-		}
-
-		case Notification::Type_PollingEnabled:
-		{
-			break;
-		}
-
-		case Notification::Type_DriverReady:
-		{
-			break;
-		}
-
-		case Notification::Type_DriverFailed:
-		{
-			break;
-		}
-
-		case Notification::Type_AwakeNodesQueried:
-		case Notification::Type_AllNodesQueried:
-		case Notification::Type_AllNodesQueriedSomeDead:
-		{
-			break;
-		}
-
-		case Notification::Type_DriverReset:
-		case Notification::Type_Notification:
-		case Notification::Type_NodeNaming:
-		case Notification::Type_NodeProtocolInfo:
-		case Notification::Type_NodeQueriesComplete:
-		default:
-		{
-		}
-	}
+    VALUE notification = rb_hash_new();
+    rb_hash_aset(notification, rb_str_new2("home_id"), INT2FIX(_notification->GetHomeId()));
+    rb_hash_aset(notification, rb_str_new2("node_id"), INT2FIX(_notification->GetNodeId()));
+    rb_hash_aset(notification, rb_str_new2("byte"), INT2FIX(_notification->GetByte()));
+    // rb_hash_aset(notification, rb_str_new2("value_id"), INT2FIX(_notification->GetValueID()));
     
+    static const char * type_name[] = {
+        "value_added", "value_removed", "value_changed", "value_refreshed", "group", "node_new",						
+        "node_added", "node_removed", "node_protocol_info", "node_naming", "node_event",						
+        "polling_disabled", "polling_enabled", "scene_event", "create_button", "delete_button", 
+        "button_on", "button_off", "driver_ready", "driver_failed", "driver_reset", 
+        "essential_node_queries_complete", "node_queries_complete", "awake_nodes_queried", 
+        "all_nodes_queried_some_dead", "all_nodes_queried", "notification", "driver_removed"					
+    };
+    
+    static const char * value_genre[] = {
+        "basic", "user", "config", "system", "count"
+    }
+    
+    static const char * value_type[] = {
+        "bool", "byte", "decimal", "int", "list", "schedule", "short", "string", "button", "raw"
+    }
+    
+    ID type, genre, value_type;
+    CONST_ID(type, type_name[_notification->GetType()]);
+
+    rb_hash_aset(notification, "type", type);
+    rb_hash_aset(notification, "genre", genre);
+    rb_hash_aset(notification, "value_type", value_type);
 }
 
 static VALUE manager_init(VALUE self) {
