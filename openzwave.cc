@@ -106,20 +106,20 @@ void OnNotification( Notification const* _notification, void* _context ) {
         "all_nodes_queried_some_dead", "all_nodes_queried", "notification", "driver_removed"					
     };
     
-    static const char * value_genre[] = {
+    static const char * value_genre_name[] = {
         "basic", "user", "config", "system", "count"
-    }
+    };
     
-    static const char * value_type[] = {
+    static const char * value_type_name[] = {
         "bool", "byte", "decimal", "int", "list", "schedule", "short", "string", "button", "raw"
-    }
+    };
     
     ID type, genre, value_type;
     CONST_ID(type, type_name[_notification->GetType()]);
 
-    rb_hash_aset(notification, "type", type);
-    rb_hash_aset(notification, "genre", genre);
-    rb_hash_aset(notification, "value_type", value_type);
+    rb_hash_aset(notification, rb_str_new2("type"), type);
+    rb_hash_aset(notification, rb_str_new2("genre"), genre);
+    rb_hash_aset(notification, rb_str_new2("value_type"), value_type);
 }
 
 static VALUE manager_init(VALUE self) {
