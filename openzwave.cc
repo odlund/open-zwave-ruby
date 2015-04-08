@@ -88,53 +88,70 @@ static VALUE options_are_locked(VALUE self) {
  *  Manager
  */
 
-void OnNotification( Notification const* _notification, void* _context ) {
-    VALUE self = (VALUE)_context;
-    
-    VALUE notification = rb_hash_new();
-    rb_hash_aset(notification, rb_str_new2("home_id"), INT2FIX(_notification->GetHomeId()));
-    rb_hash_aset(notification, rb_str_new2("node_id"), INT2FIX(_notification->GetNodeId()));
-    rb_hash_aset(notification, rb_str_new2("byte"), INT2FIX(_notification->GetByte()));
-    // rb_hash_aset(notification, rb_str_new2("value_id"), INT2FIX(_notification->GetValueID()));
-    
-    static const char * type_name[] = {
-        "value_added", "value_removed", "value_changed", "value_refreshed", "group", "node_new",						
-        "node_added", "node_removed", "node_protocol_info", "node_naming", "node_event",						
-        "polling_disabled", "polling_enabled", "scene_event", "create_button", "delete_button", 
-        "button_on", "button_off", "driver_ready", "driver_failed", "driver_reset", 
-        "essential_node_queries_complete", "node_queries_complete", "awake_nodes_queried", 
-        "all_nodes_queried_some_dead", "all_nodes_queried", "notification", "driver_removed"					
-    };
-    
-    static const char * value_genre_name[] = {
-        "basic", "user", "config", "system", "count"
-    };
-    
-    static const char * value_type_name[] = {
-        "bool", "byte", "decimal", "int", "list", "schedule", "short", "string", "button", "raw"
-    };
-    
-    ID type, genre, value_type;
-    CONST_ID(type, type_name[_notification->GetType()]);
-
-    rb_hash_aset(notification, rb_str_new2("type"), type);
-    rb_hash_aset(notification, rb_str_new2("genre"), genre);
-    rb_hash_aset(notification, rb_str_new2("value_type"), value_type);
-}
+// void OnNotification( Notification const* _notification, void* _context ) {
+//     VALUE self = (VALUE)_context;
+//
+//     VALUE notification = rb_hash_new();
+//     rb_hash_aset(notification, rb_str_new2("home_id"), INT2FIX(_notification->GetHomeId()));
+//     rb_hash_aset(notification, rb_str_new2("node_id"), INT2FIX(_notification->GetNodeId()));
+//     rb_hash_aset(notification, rb_str_new2("byte"), INT2FIX(_notification->GetByte()));
+//     // rb_hash_aset(notification, rb_str_new2("value_id"), INT2FIX(_notification->GetValueID()));
+//
+//     static const char * type_name[] = {
+//         "value_added", "value_removed", "value_changed", "value_refreshed", "group", "node_new",
+//         "node_added", "node_removed", "node_protocol_info", "node_naming", "node_event",
+//         "polling_disabled", "polling_enabled", "scene_event", "create_button", "delete_button",
+//         "button_on", "button_off", "driver_ready", "driver_failed", "driver_reset",
+//         "essential_node_queries_complete", "node_queries_complete", "awake_nodes_queried",
+//         "all_nodes_queried_some_dead", "all_nodes_queried", "notification", "driver_removed"
+//     };
+//
+//     static const char * value_genre_name[] = {
+//         "basic", "user", "config", "system", "count"
+//     };
+//
+//     static const char * value_type_name[] = {
+//         "bool", "byte", "decimal", "int", "list", "schedule", "short", "string", "button", "raw"
+//     };
+//
+//     ID type, genre, value_type;
+//     CONST_ID(type, type_name[_notification->GetType()]);
+//     CONST_ID(genre, value_genre_name[_notification->GetValue()])
+//
+//     rb_hash_aset(notification, rb_str_new2("type"), type);
+//     rb_hash_aset(notification, rb_str_new2("genre"), genre);
+//     rb_hash_aset(notification, rb_str_new2("value_type"), value_type);
+// }
 
 static VALUE manager_init(VALUE self) {
-    Manager::Create();
-	Manager::Get()->AddWatcher( OnNotification, (void*)self );
+    printf("%s", __PRETTY_FUNCTION__);
+    //     Manager::Create();
     return self;
+}
+
+static VALUE manager_alloc(VALUE klass) {
+    printf("%s", __PRETTY_FUNCTION__);
+    Manager::Create();
+
+    return Data_Wrap_Struct(klass, NULL, manager_dealloc, NULL);
+}
+
+static VALUE manager_dealloc(void * ptr) {
+    printf("%s", __PRETTY_FUNCTION__);
+    Manager::Destroy();
+}
+
+static VALUE manager_add_watcher(VALUE self) {
+    printf("%s", __PRETTY_FUNCTION__);
+    Manager::Get()->AddWatcher( OnNotification, (void*)self );
 }
 
 extern "C" {
     VALUE mOpenZWave;
-    VALUE cOptions;
-    VALUE cManager;
+    
 
     static void Init_OpenZWave_Options() {
-        cOptions = rb_define_class_under(mOpenZWave, "Options", rb_cObject);
+        VALUE cOptions = rb_define_class_under(mOpenZWave, "Options", rb_cObject);
         rb_define_method(cOptions, "initialize", RUBY_METHOD_FUNC(options_init), 3);
         rb_define_method(cOptions, "add", RUBY_METHOD_FUNC(options_add), 2);
         rb_define_method(cOptions, "get", RUBY_METHOD_FUNC(options_get), 1);
@@ -143,8 +160,15 @@ extern "C" {
     }
 
     static void Init_OpenZWave_Manager() {
-        cManager = rb_define_class_under(mOpenZWave, "Manager", rb_cObject);
-        rb_define_method(cManager, "initialize", RUBY_METHOD_FUNC(manager_init), 0);
+        VALUE cManager = rb_define_class_under(mOpenZWave, "Manager", rb_cObject);
+        
+        rb_define_alloc_func(cManager, manager_alloc);
+        rb_define_method(cManager, add_watcher, RUBY_METHOD_FUNC)
+        // rb_define_method(cManager, "initialize", RUBY_METHOD_FUNC(manager_init), 0);
+    }
+
+    static void Init_OpenZWave_Notification() {
+        VALUE cNotification = rb_define_class_under(mOpenZWave, "Notification", rb_cObject);
     }
 
     void Init_OpenZWave()
@@ -153,6 +177,7 @@ extern "C" {
         
         Init_OpenZWave_Options();
         Init_OpenZWave_Manager();
+        Init_OpenZWave_Notification();
     }
 
 } // extern "C"
